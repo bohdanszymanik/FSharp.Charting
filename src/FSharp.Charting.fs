@@ -2403,10 +2403,13 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
-            GenericChart.Create(mergeDataAndLabelsForXY data Labels, fun () -> GenericChart(SeriesChartType.Column))
-             |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
-
+        static member Column(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle,?PointWidth) = 
+            let c =
+                GenericChart.Create(mergeDataAndLabelsForXY data Labels, fun () -> GenericChart(SeriesChartType.Column))
+                |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
+            PointWidth |> Option.iter (fun v -> c.SetCustomProperty<int>("PointWidth", v))
+            c
+            
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
         /// <param name="data">The data for the chart.</param>
         /// <param name="Name">The name of the data set.</param>
