@@ -2395,6 +2395,9 @@ namespace FSharp.Charting
             GenericChart.Create(mergeDataAndLabelsForY4 data Labels, fun() -> CandlestickChart() )
              |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
 
+        static member internal ConfigureColumn(c:GenericChart,vPointWidth) = 
+            vPointWidth |> Option.iter (fun v -> c.SetCustomProperty<float>("PointWidth", v))
+
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
         /// <param name="data">The data for the chart.</param>
         /// <param name="Name">The name of the data set.</param>
@@ -2403,11 +2406,12 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
         static member Column(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle,?PointWidth) = 
             let c =
                 GenericChart.Create(mergeDataAndLabelsForXY data Labels, fun () -> GenericChart(SeriesChartType.Column))
                 |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
-            PointWidth |> Option.iter (fun v -> c.SetCustomProperty<int>("PointWidth", v))
+            Chart.ConfigureColumn(c,PointWidth)
             c
             
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
@@ -2418,10 +2422,13 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
-            GenericChart.Create(mergeDataAndLabelsForY data Labels, fun () -> GenericChart(SeriesChartType.Column))
-             |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
-
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member Column(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle,?PointWidth) = 
+            let c =
+                GenericChart.Create(mergeDataAndLabelsForY data Labels, fun () -> GenericChart(SeriesChartType.Column))
+                 |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
+            Chart.ConfigureColumn(c,PointWidth)
+            c
 
         /// <summary>Similar to the Pie chart type, except that it has a hole in the center.</summary>
         /// <param name="data">The data for the chart.</param>
@@ -3295,8 +3302,9 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data:IObservable<#seq<#key * #value>>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle) = 
-            Chart.Column(NotifySeq.ofObservableReplacing data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member Column(data:IObservable<#seq<#key * #value>>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle,?PointWidth) = 
+            Chart.Column(NotifySeq.ofObservableReplacing data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle,?PointWidth=PointWidth)
 
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
         /// <param name="data">The data for the chart. Each observation adds a data element to the chart.</param>
@@ -3306,8 +3314,9 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member ColumnIncremental(data:IObservable<#key * #value>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle) = 
-            Chart.Column(NotifySeq.ofObservableIncremental data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member ColumnIncremental(data:IObservable<#key * #value>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle,?PointWidth) = 
+            Chart.Column(NotifySeq.ofObservableIncremental data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle,?PointWidth=PointWidth)
 
         /// <summary>Similar to the Pie chart type, except that it has a hole in the center.</summary>
         /// <param name="data">The data for the chart. Each observation replaces the entire data on the chart.</param>
@@ -4399,4 +4408,4 @@ namespace FSharp.Charting
 
     [<Obsolete("This type is now obsolete. Use 'Chart' instead. Note, do not open System.Windows.Forms.DataVisualization.Charting when using this library, as it also defines a 'Chart' type.")>]
     type FSharpChart = Chart
-
+    
