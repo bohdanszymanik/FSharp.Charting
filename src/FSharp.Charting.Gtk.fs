@@ -694,7 +694,7 @@ namespace FSharp.Charting
     type internal Helpers() = 
 
         /// Use a DateTime axis if the input key data is DateTime
-        static member ApplyStaticAxis(xty, pos) = (fun (ch:('T :> GenericChart)) -> 
+        static member ApplyStaticAxis(xty, pos, ?gap) = (fun (ch:('T :> GenericChart)) -> 
             let model = ch.Model
             match model.DefaultXAxis with 
             | null -> 
@@ -703,7 +703,12 @@ namespace FSharp.Charting
                 if xty = typeof<System.TimeSpan> then 
                     model.Axes.Add (Axes.TimeSpanAxis(Position=pos))
                 if xty = typeof<string> then 
-                    model.Axes.Add (Axes.CategoryAxis(Position=pos))
+                    match gap with
+                    | Some g -> 
+                        let a = Axes.CategoryAxis(Position=pos)
+                        a.GapWidth <- g
+                        model.Axes.Add (a)
+                    | _ -> model.Axes.Add (Axes.CategoryAxis(Position=pos))
             | _ -> ()
             ch)
 
@@ -912,9 +917,10 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data:seq<('key :> key)*#value>,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member Column(data:seq<('key :> key)*#value>,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle,?PointWidth) = 
            GenericChart.Create(data |> listen |> mergeLabels Labels |> makeItems (fun ((k,v),labelOpt) -> ColumnItem(valueToDouble v)), ColumnSeries(ValueField="Value"))
-             |> Helpers.ApplyStaticAxis(typeof<'key>, Axes.AxisPosition.Bottom)
+             |> Helpers.ApplyStaticAxis(typeof<'key>, Axes.AxisPosition.Bottom, ?gap = PointWidth)
              |> Helpers.ApplyStyles(?Name=Name,?Title=Title,?Color=Color,?AxisXTitle=XTitle,?AxisYTitle=YTitle)
 
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
@@ -925,8 +931,9 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data:seq<#value>,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
-           Chart.Column(indexData data,?Name=Name,?Title=Title,?Labels=Labels, ?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member Column(data:seq<#value>,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle, ?PointWidth) = 
+           Chart.Column(indexData data,?Name=Name,?Title=Title,?Labels=Labels, ?Color=Color,?XTitle=XTitle,?YTitle=YTitle, ?PointWidth=PointWidth)
 
 #if INCOMPLETE_API
         /// <summary>Similar to the Pie chart type, except that it has a hole in the center.</summary>
@@ -1785,8 +1792,9 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member Column(data:IObservable<#seq<#key * #value>>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle) = 
-            Chart.Column(NotifySeq.ofObservableReplacing data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member Column(data:IObservable<#seq<#key * #value>>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle,?PointWidth) = 
+            Chart.Column(NotifySeq.ofObservableReplacing data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle,?PointWidth=PointWidth)
 
         /// <summary>Uses a sequence of columns to compare values across categories.</summary>
         /// <param name="data">The data for the chart. Each observation adds a data element to the chart.</param>
@@ -1796,8 +1804,9 @@ namespace FSharp.Charting
         /// <param name="Color">The color for the data.</param>
         /// <param name="XTitle">The title of the X-axis.</param>
         /// <param name="YTitle">The title of the Y-axis.</param>
-        static member ColumnIncremental(data:IObservable<#key * #value>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle) = 
-            Chart.Column(NotifySeq.ofObservableIncremental data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+        /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
+        static member ColumnIncremental(data:IObservable<#key * #value>,?Name,?Title,(* ?Labels, *) ?Color,?XTitle,?YTitle,?PointWidth) = 
+            Chart.Column(NotifySeq.ofObservableIncremental data,?Name=Name,?Title=Title(* ,?Labels=Labels *),?Color=Color,?XTitle=XTitle,?YTitle=YTitle, ?PointWidth=PointWidth)
 
 #if INCOMPLETE_API
         /// <summary>Similar to the Pie chart type, except that it has a hole in the center.</summary>
