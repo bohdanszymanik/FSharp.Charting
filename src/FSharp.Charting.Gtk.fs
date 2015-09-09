@@ -208,6 +208,8 @@ namespace FSharp.Charting
 
     module ChartTypes = 
 
+        type Bin = { LowerBound: float; UpperBound: float; Count: int}
+
         /// An implementation type for items on a chart. This type should not be used directly.
         type public LineChartItem(X: key, Y: value) = 
             member __.X = X 
@@ -616,6 +618,14 @@ namespace FSharp.Charting
         // ----------------------------------------------------------------------------------
         // Data operations
           
+        let internal binData data lowerBound upperBound intervals =
+            seq{lowerBound .. (upperBound - lowerBound)/intervals .. upperBound }
+            |> Seq.pairwise
+            |> Seq.map (fun (l,u) -> 
+                                    let cnt = data |> Seq.filter (fun e -> e >= l && e < u) |> Seq.length
+                                    {LowerBound = l; UpperBound = u; Count = cnt}
+                        )
+
         let internal allowNull x = match x with None -> null | Some v -> v
 
         let internal listen data = NotifySeq.notifyOrOnce data
@@ -735,6 +745,7 @@ namespace FSharp.Charting
             AxisXTitle |> Option.iter (fun t -> ensureDefaultXAxis().Title <- t)
             AxisYTitle |> Option.iter (fun t -> ensureDefaultYAxis().Title <- t)
             ch)
+
 
     /// Provides a set of static methods for creating charts.
     type Chart =
@@ -933,7 +944,31 @@ namespace FSharp.Charting
         /// <param name="YTitle">The title of the Y-axis.</param>
         /// <param name="PointWidth">The width of columns versus whitespace as a percentage.</param>
         static member Column(data:seq<#value>,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle, ?PointWidth) = 
-           Chart.Column(indexData data,?Name=Name,?Title=Title,?Labels=Labels, ?Color=Color,?XTitle=XTitle,?YTitle=YTitle, ?PointWidth=PointWidth)
+           Chart.Column(indexData data,?Name=Name,?Title=Title,?Labels=Labels, ?Color=Color,?XTitle=XTitle,?YTitle=YTitle)
+
+
+        /// <summary>Generates a Histogram with reasonable defaults.</summary>
+        /// <param name="data">The data for the chart.</param>
+        /// <param name="Name">The name of the data set.</param>
+        /// <param name="Title">The title of the chart.</param>
+        /// <param name="Labels">The labels that match the data.</param>
+        /// <param name="Color">The color for the data.</param>
+        /// <param name="XTitle">The title of the X-axis.</param>
+        /// <param name="YTitle">The title of the Y-axis.</param>
+        static member Histogram(data:seq<#value>,?Name,?Title,?Color,?XTitle,?YTitle, ?LowerBound, ?UpperBound, ?Intervals) = 
+            let data = data |> Seq.map valueToDouble
+            let lowerBound = match LowerBound with
+                            | Some LowerBound -> LowerBound
+                            | _ -> Seq.min data
+            let upperBound = match UpperBound with
+                            | Some UpperBound -> UpperBound
+                            | _ -> Seq.max data
+            let intervals = match Intervals with
+                            | Some Intervals -> Intervals
+                            | _ -> 30. // corresponds to what ggplot does
+            let data' = (binData data lowerBound upperBound intervals) |> Seq.map (fun b -> b.Count)
+            let labels = (binData data lowerBound upperBound intervals) |> Seq.map (fun b -> b.LowerBound.ToString())
+            Chart.Column(indexData data',?Name=Name,?Title=Title,?Labels=Some labels, ?Color=Color,?XTitle=XTitle,?YTitle=YTitle, ?PointWidth=Some 0.05)
 
 #if INCOMPLETE_API
         /// <summary>Similar to the Pie chart type, except that it has a hole in the center.</summary>
